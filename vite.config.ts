@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // ใช้ ./ เพื่อให้มันเรียกไฟล์แบบ Relative Path (แก้ปัญหาหน้าขาว/404 ได้ชัวร์กว่า)
+  // ใช้ ./ เพื่อให้มันเรียกไฟล์แบบ Relative Path 
   base: "./", 
   
   server: {

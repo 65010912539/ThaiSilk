@@ -273,22 +273,107 @@ const ProfProfile = () => {
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
-    await supabase.from('profiles').update({ bio }).eq('user_id', profile.user_id);
-    await refreshProfile();
-    toast.success('บันทึกโปรไฟล์สำเร็จ');
-    setSaving(false);
+    try {
+      await supabase.from('profiles').update({ bio }).eq('user_id', profile.user_id);
+      await refreshProfile();
+      toast.success('บันทึกโปรไฟล์สำเร็จ');
+    } catch (error) {
+      toast.error('เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!profile) return null;
+
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-bold text-foreground mb-6">โปรไฟล์</h1>
-      <div className="bg-card rounded-lg shadow-card p-6 max-w-xl space-y-4">
-        <div><Label className="text-muted-foreground">ชื่อ</Label><p className="font-medium text-foreground">{profile.first_name} {profile.last_name}</p></div>
-        <div><Label className="text-muted-foreground">ชื่อผู้ใช้</Label><p className="font-medium text-foreground">{profile.username}</p></div>
-        <div><Label className="text-muted-foreground">อีเมล</Label><p className="font-medium text-foreground">{profile.email}</p></div>
-        <div><Label>คำอธิบายตัวเอง</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
-        <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
+    <div className="animate-fade-in w-full ml-0">
+      <h1 className="font-heading text-2xl font-bold text-foreground mb-8">โปรไฟล์ผู้เชี่ยวชาญ</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* --- ฝั่งซ้าย: Profile Card --- */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-6">
+          <div className="bg-card rounded-[2rem] shadow-card border border-border/50 p-8 text-center flex flex-col items-center justify-center space-y-5 h-full min-h-[350px]">
+            <div className="relative">
+              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary border-4 border-background shadow-sm">
+                <User size={48} strokeWidth={1.5} />
+              </div>
+              {/* Status Online */}
+              <div className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-background rounded-full" />
+            </div>
+            
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-foreground">
+                {profile.first_name} {profile.last_name}
+              </h2>
+              <p className="text-sm text-muted-foreground font-medium italic">@{profile.username}</p>
+            </div>
+
+            {/* Badge สำหรับผู้เชี่ยวชาญ */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 rounded-full border border-primary/20">
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                ผู้เชี่ยวชาญ
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* --- ฝั่งขวา: ข้อมูลส่วนตัว & Bio --- */}
+        <div className="lg:col-span-8 xl:col-span-7">
+          <div className="bg-card rounded-[2rem] shadow-card border border-border/50 overflow-hidden h-full">
+            <div className="p-8 md:p-10 space-y-8">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                <h3 className="text-lg font-bold text-foreground">รายละเอียดข้อมูลผู้เชี่ยวชาญ</h3>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">ชื่อผู้ใช้ระบบ</Label>
+                  <div className="font-semibold text-foreground p-4 bg-muted/30 rounded-2xl border border-border/40">
+                    {profile.username}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">อีเมลผู้เชี่ยวชาญ</Label>
+                  <div className="font-semibold text-foreground p-4 bg-muted/30 rounded-2xl border border-border/40">
+                    {profile.email}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <Label className="text-sm font-bold text-foreground">ประวัติและข้อมูลความเชี่ยวชาญ (Bio)</Label>
+                <Textarea 
+                  value={bio} 
+                  onChange={e => setBio(e.target.value)} 
+                  rows={6} 
+                  placeholder="เขียนรายละเอียดความเชี่ยวชาญ ประสบการณ์ หรือประวัติการทำงานของคุณ..."
+                  className="resize-none rounded-2xl bg-background border-border/60 focus-visible:ring-primary/20 p-5 leading-relaxed shadow-sm"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-start">
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving} 
+                  className="w-full sm:w-auto px-14 py-7 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95"
+                >
+                  {saving ? (
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      กำลังบันทึกข้อมูล...
+                    </div>
+                  ) : (
+                    'อัปเดตโปรไฟล์ผู้เชี่ยวชาญ'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

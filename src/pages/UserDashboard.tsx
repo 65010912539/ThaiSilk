@@ -82,7 +82,6 @@ const UploadPattern = () => {
     setSelectedFiles(prev => [...prev, ...newFilesArr]);
     const newPreviews = newFilesArr.map(f => URL.createObjectURL(f));
     setPreviews(prev => [...prev, ...newPreviews]);
-    // Reset input so same file can be added again
     e.target.value = '';
   };
 
@@ -119,26 +118,15 @@ const UploadPattern = () => {
       });
       if (error) throw error;
 
-      // Notify all professors
+      // Logic แจ้งเตือนเดิมของมึง
       const { data: profRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'professor');
       if (profRoles && profRoles.length > 0) {
         const notifications = profRoles.map(r => ({
           user_id: r.user_id,
           title: 'มีลายผ้าใหม่รอตรวจสอบ',
-          message: `ผู้ใช้ได้อัปโหลดลาย "${name}" เข้ามาในระบบ กรุณาเข้าตรวจสอบ`,
-        }));
-        await supabase.from('notifications').insert(notifications);
-      }
-
-      // Notify all admins
-      const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
-      if (adminRoles && adminRoles.length > 0) {
-        const adminNotifs = adminRoles.map(r => ({
-          user_id: r.user_id,
-          title: 'มีการอัปโหลดลายผ้าใหม่',
           message: `ผู้ใช้ได้อัปโหลดลาย "${name}" เข้ามาในระบบ`,
         }));
-        await supabase.from('notifications').insert(adminNotifs);
+        await supabase.from('notifications').insert(notifications);
       }
 
       toast.success('อัปโหลดลายผ้าสำเร็จ!');
@@ -151,54 +139,134 @@ const UploadPattern = () => {
   };
 
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-bold text-foreground mb-6">อัปโหลดลายผ้า</h1>
-      <div className="bg-card rounded-lg shadow-card p-6 max-w-xl">
-        <form onSubmit={handleUpload} className="space-y-4">
-          <div>
-            <Label>รูปภาพลายผ้า (เลือกได้หลายรูป)</Label>
-            <Input type="file" accept="image/*" multiple onChange={handleFileChange} />
+    <div className="animate-fade-in w-full ml-0">
+      <div className="mb-8">
+        <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <Upload className="text-primary" />
+          อัปโหลดลายผ้าใหม่
+        </h1>
+        <p className="text-muted-foreground mt-1">กรอกข้อมูลลายผ้าเพื่ออัปโหลด</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* ฝั่งซ้าย: ส่วนอัปโหลดรูปภาพ */}
+        <div className="lg:col-span-5 xl:col-span-4">
+          <div className="bg-card rounded-[2rem] shadow-card border border-border/50 p-8 h-full">
+            <Label className="text-lg font-bold text-foreground mb-4 block flex items-center gap-2">
+              <Image size={20} className="text-primary" />
+              รูปภาพลายผ้า
+            </Label>
+            
+            <div className="relative group border-2 border-dashed border-primary/20 rounded-2xl bg-muted/30 p-10 text-center transition-all hover:bg-muted/50 hover:border-primary/40">
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                onChange={handleFileChange} 
+                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+              />
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Upload size={24} />
+                </div>
+                <p className="text-sm font-bold text-foreground">คลิกหรือลากรูปภาพมาที่นี่</p>
+                <p className="text-xs text-muted-foreground">รองรับ JPG, PNG (สูงสุดครั้งละหลายรูป)</p>
+              </div>
+            </div>
+
             {previews.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {previews.map((url, i) => (
-                  <div key={i} className="relative group">
-                    <img src={url} alt={`preview ${i}`} className="w-full aspect-square object-cover rounded-lg border border-border" />
-                    <button
-                      type="button"
-                      onClick={() => removeFile(i)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-3">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    รูปภาพที่เลือก ({selectedFiles.length})
+                  </Label>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {previews.map((url, i) => (
+                    <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-border">
+                      <img src={url} alt="preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            {selectedFiles.length > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">เลือกแล้ว {selectedFiles.length} รูป</p>
-            )}
           </div>
-          <div>
-            <Label>ชื่อลาย</Label>
-            <Input required value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div>
-            <Label>จังหวัด (ถ้าทราบ)</Label>
-            <Select value={province} onValueChange={setProvince}>
-              <SelectTrigger><SelectValue placeholder="เลือกจังหวัด" /></SelectTrigger>
-              <SelectContent>
-                {ISAN_PROVINCES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>หมายเหตุ</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-          </div>
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'กำลังอัปโหลด...' : 'อัปโหลดลายผ้า'}
-          </Button>
-        </form>
+        </div>
+
+        {/* ฝั่งขวา: แบบฟอร์มข้อมูล */}
+        <div className="lg:col-span-7 xl:col-span-6">
+          <form onSubmit={handleUpload} className="bg-card rounded-[2rem] shadow-card border border-border/50 p-8 md:p-10 space-y-8 h-full">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1.5 h-6 bg-primary rounded-full" />
+              <h3 className="text-lg font-bold text-foreground">ข้อมูลรายละเอียดลายผ้า</h3>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">ชื่อลายผ้า</Label>
+                <Input 
+                  required 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  placeholder="เช่น ลายลูกแก้ว, ลายสร้อยดอกหมาก"
+                  className="rounded-xl h-12 bg-background border-border/60"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">แหล่งที่มา (จังหวัด)</Label>
+                <Select value={province} onValueChange={setProvince}>
+                  <SelectTrigger className="rounded-xl h-12 bg-background border-border/60">
+                    <SelectValue placeholder="เลือกจังหวัดในภาคอีสาน" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ISAN_PROVINCES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">หมายเหตุ / ประวัติความเป็นมา (ถ้ามี)</Label>
+              <Textarea 
+                value={notes} 
+                onChange={e => setNotes(e.target.value)} 
+                rows={6} 
+                placeholder="ระบุรายละเอียดเพิ่มเติมเกี่ยวกับลายผ้า เช่น วิธีการทอ หรือความหมายของลาย..."
+                className="resize-none rounded-2xl bg-background border-border/60 p-4 leading-relaxed"
+              />
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full py-8 text-lg font-bold rounded-2xl transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    กำลังดำเนินการ...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={20} />
+                    ยืนยันการส่งข้อมูลเพื่อตรวจสอบ
+                  </div>
+                )}
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground mt-4 italic">
+                * ข้อมูลที่ท่านอัปโหลดจะถูกตรวจสอบโดยผู้เชี่ยวชาญก่อนนำไปแสดงในคลังลายผ้า
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -266,35 +334,106 @@ const Profile = () => {
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
-    await supabase.from('profiles').update({ bio }).eq('user_id', profile.user_id);
-    await refreshProfile();
-    toast.success('บันทึกโปรไฟล์สำเร็จ');
-    setSaving(false);
+    try {
+      await supabase.from('profiles').update({ bio }).eq('user_id', profile.user_id);
+      await refreshProfile();
+      toast.success('บันทึกโปรไฟล์สำเร็จ');
+    } catch (error) {
+      toast.error('เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!profile) return null;
 
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-bold text-foreground mb-6">โปรไฟล์</h1>
-      <div className="bg-card rounded-lg shadow-card p-6 max-w-xl space-y-4">
-        <div>
-          <Label className="text-muted-foreground">ชื่อ</Label>
-          <p className="font-medium text-foreground">{profile.first_name} {profile.last_name}</p>
+    <div className="animate-fade-in w-full ml-0">
+      <h1 className="font-heading text-2xl font-bold text-foreground mb-8">โปรไฟล์</h1>
+      
+      {/* ปรับ Grid ให้ยืดตามคอนเทนต์ แต่ชิดซ้าย */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* --- ฝั่งซ้าย: Profile Card (กินพื้นที่ 4 จาก 12 ส่วน) --- */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-6">
+          <div className="bg-card rounded-[2rem] shadow-card border border-border/50 p-8 text-center flex flex-col items-center justify-center space-y-5 h-full min-h-[350px]">
+            <div className="relative">
+              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary border-4 border-background shadow-sm">
+                <User size={48} strokeWidth={1.5} />
+              </div>
+              <div className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-background rounded-full" />
+            </div>
+            
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-foreground">
+                {profile.first_name} {profile.last_name}
+              </h2>
+              <p className="text-sm text-muted-foreground font-medium italic">@{profile.username}</p>
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-muted rounded-full">
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                ผู้ใช้งานทั่วไป
+              </span>
+            </div>
+          </div>
         </div>
-        <div>
-          <Label className="text-muted-foreground">ชื่อผู้ใช้</Label>
-          <p className="font-medium text-foreground">{profile.username}</p>
+
+        {/* --- ฝั่งขวา: ข้อมูลส่วนตัว (กินพื้นที่ 8 จาก 12 ส่วน) --- */}
+        <div className="lg:col-span-8 xl:col-span-7">
+          <div className="bg-card rounded-[2rem] shadow-card border border-border/50 overflow-hidden h-full">
+            <div className="p-8 md:p-10 space-y-8">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                <h3 className="text-lg font-bold text-foreground">ข้อมูลรายละเอียด</h3>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">ชื่อผู้ใช้</Label>
+                  <div className="font-semibold text-foreground p-4 bg-muted/30 rounded-2xl border border-border/40">
+                    {profile.username}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">อีเมลติดต่อ</Label>
+                  <div className="font-semibold text-foreground p-4 bg-muted/30 rounded-2xl border border-border/40">
+                    {profile.email}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <Label className="text-sm font-bold text-foreground">คำอธิบายตัวเอง (Bio)</Label>
+                <Textarea 
+                  value={bio} 
+                  onChange={e => setBio(e.target.value)} 
+                  rows={6} 
+                  placeholder="เขียนแนะนำตัวเองเพื่อให้คนอื่นรู้จักคุณ..."
+                  className="resize-none rounded-2xl bg-background border-border/60 focus-visible:ring-primary/20 p-5 leading-relaxed shadow-sm"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-start">
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving} 
+                  className="w-full sm:w-auto px-14 py-7 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95"
+                >
+                  {saving ? (
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      กำลังบันทึก...
+                    </div>
+                  ) : (
+                    'อัปเดตข้อมูลโปรไฟล์'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <Label className="text-muted-foreground">อีเมล</Label>
-          <p className="font-medium text-foreground">{profile.email}</p>
-        </div>
-        <div>
-          <Label>คำอธิบายตัวเอง</Label>
-          <Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} />
-        </div>
-        <Button onClick={handleSave} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</Button>
       </div>
     </div>
   );
