@@ -386,7 +386,7 @@ const ProfessorDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <DashboardSidebar items={sidebarItems} title="Professor Dashboard" />
+      <DashboardSidebar items={sidebarItems} title="Expert Dashboard" />
       <main className="flex-1 p-6 md:p-8 overflow-auto">
         <Routes>
           <Route index element={<Overview />} />
