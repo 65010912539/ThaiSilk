@@ -5,7 +5,6 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // ใช้ ./ เพื่อให้มันเรียกไฟล์แบบ Relative Path 
   base: "./", 
   
   server: {
@@ -26,9 +25,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   build: {
-    // โฟลเดอร์ปลายทางคือ dist (ถูกต้องแล้ว)
     outDir: "dist",
-    // เพิ่มตรงนี้เพื่อให้มั่นใจว่าชื่อไฟล์ assets จะไม่เพี้ยน
     emptyOutDir: true,
   }
 }));
